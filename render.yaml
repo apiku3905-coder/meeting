@@ -2,7 +2,7 @@ services:
   - type: web
     name: meeting-center
     env: node
-    region: sgp
+    region: oregon
     buildCommand: npm install && npm run build
     startCommand: npm run start
     plan: free
