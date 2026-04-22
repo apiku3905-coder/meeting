@@ -21,6 +21,7 @@ interface ServerData {
       lineToken: string;
       lineUserId: string;
       dailyReminderTime?: string;
+      dailyReminderDays?: number[];
       meetings: any[];
     };
   };
@@ -50,7 +51,7 @@ async function loadData(): Promise<ServerData> {
 
 // API to sync meetings and line settings from frontend
 app.post("/api/sync", async (req, res) => {
-  const { userId, lineToken, lineUserId, dailyReminderTime, meetings } = req.body;
+  const { userId, lineToken, lineUserId, dailyReminderTime, dailyReminderDays, meetings } = req.body;
   
   if (!userId) {
     return res.status(400).json({ error: "userId is required" });
@@ -68,6 +69,7 @@ app.post("/api/sync", async (req, res) => {
     if (lineToken !== undefined) userData.lineToken = lineToken;
     if (lineUserId !== undefined) userData.lineUserId = lineUserId;
     if (dailyReminderTime !== undefined) userData.dailyReminderTime = dailyReminderTime;
+    if (dailyReminderDays !== undefined) userData.dailyReminderDays = dailyReminderDays;
     if (meetings !== undefined) userData.meetings = meetings;
 
     // Upsert back to Supabase
@@ -139,13 +141,15 @@ cron.schedule("* * * * *", async () => {
 
     // Process daily summaries
     const reminderTime = user.dailyReminderTime || "08:00";
+    const reminderDays = user.dailyReminderDays || [1, 2, 3, 4, 5, 6, 0];
     // Check if the current time matches the reminder time format HH:mm in Taiwan timezone (+08:00)
     // Convert current time to string "HH:mm"
     const localNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
     const currentHH = String(localNow.getUTCHours()).padStart(2, '0');
     const currentMM = String(localNow.getUTCMinutes()).padStart(2, '0');
+    const currentDay = localNow.getUTCDay();
     
-    if (`${currentHH}:${currentMM}` === reminderTime) {
+    if (reminderDays.includes(currentDay) && `${currentHH}:${currentMM}` === reminderTime) {
       const dateStr = localNow.toISOString().split('T')[0];
       const todaysMeetings = user.meetings.filter(m => m.date === dateStr && !m.isCompleted);
       
