@@ -535,15 +535,12 @@ export default function App() {
       {showSettings && (
         <div className="fixed inset-0 bg-[#FFD700]/70 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-lg border-4 border-black shadow-[12px_12px_0px_#000] flex flex-col overflow-hidden">
-            <div className="p-6 border-b-4 border-black flex items-start sm:items-center justify-between bg-[#CFA3FF] gap-2 flex-col sm:flex-row">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-grow w-full">
-                <h2 className="text-2xl font-black flex items-center gap-2 uppercase tracking-widest text-black whitespace-nowrap"><Settings className="w-6 h-6 stroke-[3]" /> LINE 通知設定</h2>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                  <div className="flex items-center gap-2 bg-white pl-2 pr-2 border-2 border-black shadow-[2px_2px_0px_#000] w-auto h-[33px]">
-                    <label className="text-[14px] leading-[18px] font-black whitespace-nowrap uppercase">每日提醒</label>
-                    <input type="time" value={dailyReminderTime} onChange={e => setDailyReminderTime(e.target.value)} className="font-mono font-bold outline-none text-black bg-transparent text-[13px] w-[109px]" />
-                  </div>
-                  <div className="flex gap-1 flex-wrap mt-1 sm:mt-0">
+            <div className="p-6 border-b-4 border-black flex items-start justify-between bg-[#CFA3FF] gap-2 flex-col sm:flex-row relative">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 flex-grow w-full justify-between">
+                <h2 className="text-2xl font-black flex items-center gap-2 uppercase tracking-widest text-black whitespace-nowrap mt-1"><Settings className="w-6 h-6 stroke-[3]" /> LINE 通知設定</h2>
+                
+                <div className="flex flex-col items-start sm:items-end gap-2 pr-8 sm:pr-0">
+                  <div className="flex gap-1 flex-row flex-nowrap">
                     {[
                       { val: 1, label: '一' },
                       { val: 2, label: '二' },
@@ -570,9 +567,13 @@ export default function App() {
                       </label>
                     ))}
                   </div>
+                  <div className="flex items-center justify-between gap-2 bg-white pl-2 pr-2 border-2 border-black shadow-[2px_2px_0px_#000] w-[218px] h-[33px]">
+                    <label className="text-[14px] leading-[18px] font-black whitespace-nowrap uppercase">提醒</label>
+                    <input type="time" value={dailyReminderTime} onChange={e => setDailyReminderTime(e.target.value)} className="font-mono font-bold outline-none text-black bg-transparent text-[13px] w-[109px]" />
+                  </div>
                 </div>
               </div>
-              <button onClick={() => setShowSettings(false)} className="text-black hover:bg-black hover:text-[#CFA3FF] border-2 border-transparent hover:border-black p-1 transition-colors absolute top-6 right-6 sm:static sm:flex-shrink-0">
+              <button onClick={() => setShowSettings(false)} className="text-black hover:bg-black hover:text-[#CFA3FF] border-2 border-transparent hover:border-black p-1 transition-colors absolute top-6 right-6">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
