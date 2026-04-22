@@ -535,11 +535,13 @@ export default function App() {
       {showSettings && (
         <div className="fixed inset-0 bg-[#FFD700]/70 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-lg border-4 border-black shadow-[12px_12px_0px_#000] flex flex-col overflow-hidden">
-            <div className="p-6 border-b-4 border-black flex items-start justify-between bg-[#CFA3FF] gap-2 flex-col sm:flex-row relative">
-              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 flex-grow w-full justify-between">
-                <h2 className="text-2xl font-black flex items-center gap-2 uppercase tracking-widest text-black whitespace-nowrap mt-1"><Settings className="w-6 h-6 stroke-[3]" /> LINE 通知設定</h2>
+            <div className="p-4 sm:p-6 border-b-4 border-black flex items-start justify-between bg-[#CFA3FF] gap-4">
+              <div className="flex flex-col md:flex-row md:items-start gap-4 flex-grow w-full">
+                <h2 className="text-2xl font-black flex items-center gap-2 uppercase tracking-widest text-black whitespace-nowrap mt-1">
+                  <Settings className="w-6 h-6 stroke-[3]" /> LINE 通知設定
+                </h2>
                 
-                <div className="flex flex-col items-start sm:items-end gap-2 pr-8 sm:pr-0">
+                <div className="flex flex-col items-start md:items-end gap-2 md:ml-auto">
                   <div className="flex gap-1 flex-row flex-nowrap">
                     {[
                       { val: 1, label: '一' },
@@ -573,7 +575,8 @@ export default function App() {
                   </div>
                 </div>
               </div>
-              <button onClick={() => setShowSettings(false)} className="text-black hover:bg-black hover:text-[#CFA3FF] border-2 border-transparent hover:border-black p-1 transition-colors absolute top-6 right-6">
+              
+              <button onClick={() => setShowSettings(false)} className="text-black hover:bg-black hover:text-[#CFA3FF] border-2 border-transparent hover:border-black p-1 transition-colors flex-shrink-0 -mt-1 sm:mt-0">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
