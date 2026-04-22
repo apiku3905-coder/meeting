@@ -592,9 +592,12 @@ export default function App() {
               </div>
               
               <div>
-                <label className="block text-sm font-black text-black mb-2 uppercase">User ID (使用者 ID)</label>
-                <input type="text" value={lineUserId} onChange={e => setLineUserId(e.target.value)} className="w-full border-4 border-black bg-white px-4 py-3 text-sm focus:bg-[#FFF9E6] outline-none transition-colors font-mono font-bold shadow-[4px_4px_0px_#000]" placeholder="Uxxxxxxxxxxxxxxxxxc" />
-                <p className="text-xs font-bold text-black border-l-4 border-black pl-2 mt-3 bg-white p-2 border-y-2 border-r-2 inline-block">請在 Developer Console 的 Basic settings 分頁最下方找到您的 LINE User ID (並非您的 LINE ID)。</p>
+                <label className="block text-sm font-black text-black mb-2 uppercase">接收者 ID (User ID / Group ID)</label>
+                <input type="text" value={lineUserId} onChange={e => setLineUserId(e.target.value)} className="w-full border-4 border-black bg-white px-4 py-3 text-sm focus:bg-[#FFF9E6] outline-none transition-colors font-mono font-bold shadow-[4px_4px_0px_#000]" placeholder="Uxxxxx... 或 Cxxxxx..." />
+                <p className="text-xs font-bold text-black border-l-4 border-black pl-2 mt-3 bg-white p-2 border-y-2 border-r-2 inline-block">
+                  個人通知：填寫 Developer Console 的 User ID。<br />
+                  群組通知：將機器人邀請至群組，或在對話框輸入 <span className="bg-yellow-200 px-1 border border-black font-mono">!id</span> 機器人將會自動回報。
+                </p>
               </div>
 
             </div>

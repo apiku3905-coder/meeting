@@ -130,6 +130,61 @@ app.post("/api/test-line", async (req, res) => {
   res.json({ success: true });
 });
 
+// LINE Webhook
+app.post("/api/webhook", async (req, res) => {
+  // Always respond to LINE immediately
+  res.status(200).send("OK");
+  
+  const events = req.body.events;
+  if (!events || !Array.isArray(events)) return;
+
+  const data = await loadData();
+  let defaultToken = "";
+  for (const uid in data.users) {
+    if (data.users[uid].lineToken) {
+      defaultToken = data.users[uid].lineToken;
+      break;
+    }
+  }
+
+  if (!defaultToken) return;
+
+  for (const event of events) {
+    if (event.type === "message" || event.type === "join") {
+      const source = event.source;
+      const id = source.groupId || source.userId;
+      
+      let replyText = "";
+      if (event.type === "join") {
+        replyText = `大家好！我是會議提醒機器人。\n請複製以下接收者 ID 並填入網站的設定中：\n\n${id}`;
+      } else if (event.type === "message" && event.message.type === "text") {
+        if (event.message.text.trim() === "!id") {
+          replyText = `您的接收者 ID 為：\n${id}\n\n請將此代碼填入網站的「接收者 ID」欄位中。`;
+        }
+      }
+
+      if (replyText) {
+        try {
+          await fetch("https://api.line.me/v2/bot/message/reply", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${defaultToken}`
+            },
+            body: JSON.stringify({
+              replyToken: event.replyToken,
+              messages: [{ type: "text", text: replyText }]
+            })
+          });
+        } catch (e) {
+          console.error("Webhook reply failed:", e);
+        }
+      }
+    }
+  }
+});
+
+
 // CRON: Every minute to check for dynamic reminders and daily summaries
 cron.schedule("* * * * *", async () => {
   const data = await loadData();
