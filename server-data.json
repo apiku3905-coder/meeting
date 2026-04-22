@@ -1,0 +1,30 @@
+{
+  "users": {
+    "Quentin": {
+      "lineToken": "NaTP2AD0lWX35gQZelYvUohuHvmKJhdTbIDjEk171jl5PqKjNQHhOTbBBm7pwZSkMQ+f75KQLYfLWmmmkE/Av0v+VWPM4uklh2b47TqPLAwWs+v8G4Xq6wFuHPCiTj8gLYRhqjNU5efVSOZzcYxWDQdB04t89/1O/w1cDnyilFU=",
+      "lineUserId": "U508c27bf4d5032b7bd35fb88a4095b63",
+      "meetings": [],
+      "dailyReminderTime": "13:10"
+    },
+    "Ivy": {
+      "lineToken": "NaTP2AD0lWX35gQZelYvUohuHvmKJhdTbIDjEk171jl5PqKjNQHhOTbBBm7pwZSkMQ+f75KQLYfLWmmmkE/Av0v+VWPM4uklh2b47TqPLAwWs+v8G4Xq6wFuHPCiTj8gLYRhqjNU5efVSOZzcYxWDQdB04t89/1O/w1cDnyilFU=",
+      "lineUserId": "U508c27bf4d5032b7bd35fb88a4095b63",
+      "meetings": [
+        {
+          "date": "2026-04-22",
+          "time": "18:05",
+          "units": "ATS",
+          "outline": "#25040",
+          "preparation": "完工會議",
+          "remindMinutes": 10,
+          "id": "1776851603331",
+          "userId": "Ivy",
+          "isCompleted": true,
+          "createdAt": "2026-04-22T09:53:23.331Z",
+          "updatedAt": "2026-04-22T09:56:52.719Z"
+        }
+      ],
+      "dailyReminderTime": "09:03"
+    }
+  }
+}

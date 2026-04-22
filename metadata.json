@@ -1,0 +1,6 @@
+{
+  "name": "Meeting Reminder",
+  "description": "Manage your meetings and receive daily schedules and upcoming meeting reminders via LINE.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
