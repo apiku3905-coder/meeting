@@ -1,18 +1,19 @@
 import express from "express";
 import path from "path";
 import cron from "node-cron";
-import fs from "fs";
+import dotenv from "dotenv";
+import { createClient } from "@supabase/supabase-js";
 
-// Use built-in fetch if available (Node 18+), else you'd need node-fetch.
-// Since we are in Node 22, global fetch is available.
+dotenv.config();
 
 const app = express();
 app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
-// Path to store server-side data for crons
-const dataDir = process.env.DATA_DIR || process.cwd();
-const DATA_FILE = path.resolve(dataDir, "server-data.json");
+// Initialize Supabase
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabaseKey = process.env.SUPABASE_KEY || "";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface ServerData {
   users: {
@@ -25,50 +26,76 @@ interface ServerData {
   };
 }
 
-function loadData(): ServerData {
-  if (fs.existsSync(DATA_FILE)) {
-    try {
-      const content = fs.readFileSync(DATA_FILE, "utf-8");
-      return JSON.parse(content);
-    } catch (e) {
+// Function to fetch all data for cron jobs
+async function loadData(): Promise<ServerData> {
+  if (!supabaseUrl || !supabaseKey) return { users: {} };
+  try {
+    const { data, error } = await supabase.from('app_data').select('*');
+    if (error) {
+      console.error("Supabase loadData error:", error.message);
       return { users: {} };
     }
+    const serverData: ServerData = { users: {} };
+    if (data) {
+      data.forEach(row => {
+        serverData.users[row.user_id] = row.data;
+      });
+    }
+    return serverData;
+  } catch (e) {
+    console.error(e);
+    return { users: {} };
   }
-  return { users: {} };
-}
-
-function saveData(data: ServerData) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
 // API to sync meetings and line settings from frontend
-app.post("/api/sync", (req, res) => {
+app.post("/api/sync", async (req, res) => {
   const { userId, lineToken, lineUserId, dailyReminderTime, meetings } = req.body;
   
   if (!userId) {
     return res.status(400).json({ error: "userId is required" });
   }
 
-  const data = loadData();
-  if (!data.users[userId]) {
-    data.users[userId] = { lineToken: "", lineUserId: "", meetings: [] };
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: "Supabase not configured" });
   }
-  
-  if (lineToken !== undefined) data.users[userId].lineToken = lineToken;
-  if (lineUserId !== undefined) data.users[userId].lineUserId = lineUserId;
-  if (dailyReminderTime !== undefined) data.users[userId].dailyReminderTime = dailyReminderTime;
-  if (meetings !== undefined) data.users[userId].meetings = meetings;
 
-  saveData(data);
-  res.json({ success: true });
+  try {
+    // Fetch existing user data
+    const { data: existingRow, error: fetchErr } = await supabase.from('app_data').select('data').eq('user_id', userId).single();
+    let userData = existingRow?.data || { lineToken: "", lineUserId: "", meetings: [] };
+    
+    if (lineToken !== undefined) userData.lineToken = lineToken;
+    if (lineUserId !== undefined) userData.lineUserId = lineUserId;
+    if (dailyReminderTime !== undefined) userData.dailyReminderTime = dailyReminderTime;
+    if (meetings !== undefined) userData.meetings = meetings;
+
+    // Upsert back to Supabase
+    const { error: upsertErr } = await supabase.from('app_data').upsert({ user_id: userId, data: userData });
+    if (upsertErr) throw upsertErr;
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error("Supabase sync error:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // API to load user data
-app.get("/api/data/:userId", (req, res) => {
+app.get("/api/data/:userId", async (req, res) => {
   const { userId } = req.params;
-  const data = loadData();
-  const user = data.users[userId] || { lineToken: "", lineUserId: "", dailyReminderTime: "08:00", meetings: [] };
-  res.json(user);
+  if (!supabaseUrl || !supabaseKey) {
+    return res.json({ lineToken: "", lineUserId: "", dailyReminderTime: "08:00", meetings: [] });
+  }
+
+  try {
+    const { data: existingRow } = await supabase.from('app_data').select('data').eq('user_id', userId).single();
+    const user = existingRow?.data || { lineToken: "", lineUserId: "", dailyReminderTime: "08:00", meetings: [] };
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.json({ lineToken: "", lineUserId: "", dailyReminderTime: "08:00", meetings: [] });
+  }
 });
 
 // Helper to send Line Message
@@ -103,14 +130,14 @@ app.post("/api/test-line", async (req, res) => {
 
 // CRON: Every minute to check for dynamic reminders and daily summaries
 cron.schedule("* * * * *", async () => {
-  const data = loadData();
+  const data = await loadData();
   const now = new Date();
   
   for (const userId in data.users) {
     const user = data.users[userId];
     if (!user.lineToken || !user.lineUserId) continue;
 
-// Process daily summaries
+    // Process daily summaries
     const reminderTime = user.dailyReminderTime || "08:00";
     // Check if the current time matches the reminder time format HH:mm in Taiwan timezone (+08:00)
     // Convert current time to string "HH:mm"

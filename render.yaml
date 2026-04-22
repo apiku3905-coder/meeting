@@ -5,11 +5,10 @@ services:
     region: sgp
     buildCommand: npm install && npm run build
     startCommand: npm run start
-    plan: free # Try to use the free plan if available
-    disk:
-      name: data
-      mountPath: /data
-      sizeGB: 1
+    plan: free
     envVars:
-      - key: DATA_DIR
-        value: /data
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+
