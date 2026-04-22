@@ -15,12 +15,12 @@ import {
 import { format } from 'date-fns';
 
 // Sync meetings and settings to the local server
-async function syncToServer(userId: string, lineToken: string, lineUserId: string, dailyReminderTime: string, meetings: any[]) {
+async function syncToServer(userId: string, lineToken: string, lineUserId: string, dailyReminderTime: string, dailyReminderDays: number[], meetings: any[]) {
   try {
     await fetch('/api/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, lineToken, lineUserId, dailyReminderTime, meetings })
+      body: JSON.stringify({ userId, lineToken, lineUserId, dailyReminderTime, dailyReminderDays, meetings })
     });
   } catch (error) {
     console.error("Failed to sync to server:", error);
@@ -53,6 +53,7 @@ export default function App() {
   const [lineToken, setLineToken] = useState('');
   const [lineUserId, setLineUserId] = useState('');
   const [dailyReminderTime, setDailyReminderTime] = useState('08:00');
+  const [dailyReminderDays, setDailyReminderDays] = useState<number[]>([1, 2, 3, 4, 5, 6, 0]);
   
   // Form State
   const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null);
@@ -89,6 +90,7 @@ export default function App() {
         setLineToken(data.lineToken || '');
         setLineUserId(data.lineUserId || '');
         setDailyReminderTime(data.dailyReminderTime || '08:00');
+        setDailyReminderDays(data.dailyReminderDays || [1, 2, 3, 4, 5, 6, 0]);
         setMeetings(data.meetings || []);
         setLoading(false);
       })
@@ -103,9 +105,9 @@ export default function App() {
   // Sync to server every time these dependencies change
   useEffect(() => {
     if (user && !loading) {
-       syncToServer(user, lineToken, lineUserId, dailyReminderTime, meetings);
+       syncToServer(user, lineToken, lineUserId, dailyReminderTime, dailyReminderDays, meetings);
     }
-  }, [user, lineToken, lineUserId, dailyReminderTime, meetings, loading]);
+  }, [user, lineToken, lineUserId, dailyReminderTime, dailyReminderDays, meetings, loading]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,6 +124,7 @@ export default function App() {
     setLineToken('');
     setLineUserId('');
     setDailyReminderTime('08:00');
+    setDailyReminderDays([1, 2, 3, 4, 5, 6, 0]);
   };
 
   const saveSettings = () => {
@@ -535,9 +538,38 @@ export default function App() {
             <div className="p-6 border-b-4 border-black flex items-start sm:items-center justify-between bg-[#CFA3FF] gap-2 flex-col sm:flex-row">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-grow w-full">
                 <h2 className="text-2xl font-black flex items-center gap-2 uppercase tracking-widest text-black whitespace-nowrap"><Settings className="w-6 h-6 stroke-[3]" /> LINE 通知設定</h2>
-                <div className="flex items-center gap-2 bg-white pl-2 pr-2 border-2 border-black shadow-[2px_2px_0px_#000] w-[190px] h-[33px]">
-                  <label className="text-[14px] leading-[18px] font-black whitespace-nowrap uppercase">每日提醒</label>
-                  <input type="time" value={dailyReminderTime} onChange={e => setDailyReminderTime(e.target.value)} className="font-mono font-bold outline-none text-black bg-transparent text-[13px] -ml-[3px] w-[109px]" />
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                  <div className="flex items-center gap-2 bg-white pl-2 pr-2 border-2 border-black shadow-[2px_2px_0px_#000] w-auto h-[33px]">
+                    <label className="text-[14px] leading-[18px] font-black whitespace-nowrap uppercase">每日提醒</label>
+                    <input type="time" value={dailyReminderTime} onChange={e => setDailyReminderTime(e.target.value)} className="font-mono font-bold outline-none text-black bg-transparent text-[13px] w-[109px]" />
+                  </div>
+                  <div className="flex gap-1 flex-wrap mt-1 sm:mt-0">
+                    {[
+                      { val: 1, label: '一' },
+                      { val: 2, label: '二' },
+                      { val: 3, label: '三' },
+                      { val: 4, label: '四' },
+                      { val: 5, label: '五' },
+                      { val: 6, label: '六' },
+                      { val: 0, label: '日' },
+                    ].map(day => (
+                      <label key={day.val} className={`cursor-pointer w-7 h-7 flex items-center justify-center border-2 border-black font-black text-xs transition-colors shadow-[1px_1px_0px_#000] ${dailyReminderDays.includes(day.val) ? 'bg-[#FFD700] text-black' : 'bg-white text-gray-400'}`}>
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={dailyReminderDays.includes(day.val)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setDailyReminderDays(prev => [...prev, day.val]);
+                            } else {
+                              setDailyReminderDays(prev => prev.filter(d => d !== day.val));
+                            }
+                          }}
+                        />
+                        {day.label}
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
               <button onClick={() => setShowSettings(false)} className="text-black hover:bg-black hover:text-[#CFA3FF] border-2 border-transparent hover:border-black p-1 transition-colors absolute top-6 right-6 sm:static sm:flex-shrink-0">
