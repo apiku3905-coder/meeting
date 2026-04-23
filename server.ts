@@ -23,6 +23,7 @@ interface ServerData {
       dailyReminderTime?: string;
       dailyReminderDays?: number[];
       meetings: any[];
+      subscribers?: { [lineId: string]: string[] };
     };
   };
 }
@@ -140,14 +141,18 @@ app.post("/api/webhook", async (req, res) => {
 
   const data = await loadData();
   let defaultToken = "";
+  let targetUserId = "";
+  let targetUserData: any = null;
   for (const uid in data.users) {
     if (data.users[uid].lineToken) {
       defaultToken = data.users[uid].lineToken;
+      targetUserId = uid;
+      targetUserData = data.users[uid];
       break;
     }
   }
 
-  if (!defaultToken) return;
+  if (!defaultToken || !targetUserData) return;
 
   for (const event of events) {
     if (event.type === "message" || event.type === "join") {
@@ -158,8 +163,30 @@ app.post("/api/webhook", async (req, res) => {
       if (event.type === "join") {
         replyText = `大家好！我是會議提醒機器人。\n請複製以下接收者 ID 並填入網站的設定中：\n\n${id}`;
       } else if (event.type === "message" && event.message.type === "text") {
-        if (event.message.text.trim() === "!id") {
+        const text = event.message.text.trim();
+        if (text === "!id") {
           replyText = `您的接收者 ID 為：\n${id}\n\n請將此代碼填入網站的「接收者 ID」欄位中。`;
+        } else if (text.startsWith("!綁定 ")) {
+          const tag = text.replace("!綁定 ", "").trim();
+          if (tag) {
+            if (!targetUserData.subscribers) targetUserData.subscribers = {};
+            if (!targetUserData.subscribers[id]) targetUserData.subscribers[id] = [];
+            if (!targetUserData.subscribers[id].includes(tag)) {
+              targetUserData.subscribers[id].push(tag);
+              await supabase.from('app_data').upsert({ user_id: targetUserId, data: targetUserData });
+            }
+            replyText = `✅ 成功綁定標籤：【${tag}】\n未來指定發送給【${tag}】的會議都會通知到這裡！`;
+          }
+        } else if (text.startsWith("!解除 ")) {
+          const tag = text.replace("!解除 ", "").trim();
+          if (tag && targetUserData.subscribers && targetUserData.subscribers[id]) {
+            targetUserData.subscribers[id] = targetUserData.subscribers[id].filter((t: string) => t !== tag);
+            await supabase.from('app_data').upsert({ user_id: targetUserId, data: targetUserData });
+            replyText = `✅ 成功解除標籤：【${tag}】`;
+          }
+        } else if (text === "!標籤") {
+          const tags = targetUserData.subscribers?.[id] || [];
+          replyText = tags.length > 0 ? `目前此接收者綁定的標籤有：\n${tags.join("、")}` : "目前沒有綁定任何標籤。";
         }
       }
 
@@ -238,7 +265,24 @@ cron.schedule("* * * * *", async () => {
     for (const m of upcomingMeetings) {
       const remindMins = m.remindMinutes || 10;
       let msg = `⚠️ 【會議即將開始提醒】\n\n您有一個會議將在 ${remindMins} 分鐘後開始：\n⏰ 時間: ${m.time}\n🏢 單位: ${m.units}\n📝 大綱: ${m.outline}\n📂 準備資料: ${m.preparation || '無'}`;
-      await sendLineMessage(user.lineToken, user.lineUserId, msg);
+      
+      const hasTags = Array.isArray(m.tags) && m.tags.length > 0;
+      if (!hasTags) {
+        // Send to default lineUserId if no tags specified
+        await sendLineMessage(user.lineToken, user.lineUserId, msg);
+      } else {
+        // Option A: Send ONLY to subscribers matching the tags
+        const sentIds = new Set<string>();
+        if (user.subscribers) {
+          for (const [subId, subTags] of Object.entries(user.subscribers)) {
+            const isMatch = m.tags.some((tag: string) => subTags.includes(tag));
+            if (isMatch && !sentIds.has(subId)) {
+              await sendLineMessage(user.lineToken, subId, msg);
+              sentIds.add(subId);
+            }
+          }
+        }
+      }
     }
   }
 });

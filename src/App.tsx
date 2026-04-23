@@ -63,7 +63,8 @@ export default function App() {
     units: '',
     outline: '',
     preparation: '',
-    remindMinutes: 10
+    remindMinutes: 10,
+    tags: ''
   });
 
   // Check local storage for existing session
@@ -163,8 +164,10 @@ export default function App() {
         } : m));
       } else {
         const id = Date.now().toString();
+        const parsedTags = formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(t => t) : [];
         setMeetings(prev => [...prev, {
           ...formData,
+          tags: parsedTags,
           id,
           userId: user,
           isCompleted: false,
@@ -180,7 +183,8 @@ export default function App() {
         units: '',
         outline: '',
         preparation: '',
-        remindMinutes: 10
+        remindMinutes: 10,
+        tags: ''
       });
     } catch (err: any) {
       console.error(err);
@@ -228,7 +232,8 @@ export default function App() {
       units: m.units,
       outline: m.outline,
       preparation: m.preparation,
-      remindMinutes: m.remindMinutes || 10
+      remindMinutes: m.remindMinutes || 10,
+      tags: m.tags ? m.tags.join(', ') : ''
     });
     setEditingMeetingId(null);
     setShowMeetingModal(true);
@@ -241,7 +246,8 @@ export default function App() {
       units: m.units,
       outline: m.outline,
       preparation: m.preparation,
-      remindMinutes: m.remindMinutes || 10
+      remindMinutes: m.remindMinutes || 10,
+      tags: m.tags ? m.tags.join(', ') : ''
     });
     setEditingMeetingId(m.id);
     setShowMeetingModal(true);
@@ -356,7 +362,7 @@ export default function App() {
 
           <button onClick={() => {
               setEditingMeetingId(null);
-              setFormData({date: format(new Date(), 'yyyy-MM-dd'), time: format(new Date(), 'HH:mm'), units: '', outline: '', preparation: '', remindMinutes: 10});
+              setFormData({date: format(new Date(), 'yyyy-MM-dd'), time: format(new Date(), 'HH:mm'), units: '', outline: '', preparation: '', remindMinutes: 10, tags: ''});
               setShowMeetingModal(true);
             }} 
             className="bg-[#99CCFF] text-black border-4 border-black px-4 py-2 font-bold uppercase tracking-wider hover:bg-[#80BFFF] shadow-[4px_4px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000] transition-all ml-2">
@@ -396,6 +402,15 @@ export default function App() {
                               <span className="bg-black text-white px-2 py-1 inline-block uppercase tracking-widest text-[18px] leading-[18px] flex-shrink-0">與會單位/人員</span>
                               <p className="text-[18px] leading-[28px] font-black text-black truncate uppercase -mt-[2px]">{m.units}</p>
                             </div>
+                            {m.tags && m.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1 mb-1">
+                                {m.tags.map((tag: string, i: number) => (
+                                  <span key={i} className="bg-[#FFD700] text-black border-2 border-black px-2 py-0.5 text-xs font-black uppercase shadow-[1px_1px_0px_#000]">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                             {m.outline && (
                               <div className="flex items-start gap-2">
                                 <span className="bg-black text-white px-2 py-1 inline-block uppercase tracking-widest text-[18px] leading-[18px] flex-shrink-0">大綱</span>
@@ -518,6 +533,11 @@ export default function App() {
               <div>
                 <label className="block text-sm font-black text-black mb-2 uppercase tracking-wider">提前提醒(分) <span className="text-[#FF4444]">*</span></label>
                 <input required type="number" min="5" max="60" step="5" value={formData.remindMinutes || 10} onChange={e => setFormData({...formData, remindMinutes: parseInt(e.target.value) || 10})} className="w-full border-4 border-black bg-white px-4 py-3 text-sm font-mono font-bold focus:bg-yellow-100 outline-none transition-colors shadow-[4px_4px_0px_#000]" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-black text-black mb-2 uppercase tracking-wider">通知標籤 (選填，多個請用逗號分隔)</label>
+                <input type="text" placeholder="例如：行銷部, 研發部" value={formData.tags || ''} onChange={e => setFormData({...formData, tags: e.target.value})} className="w-full border-4 border-black bg-white px-4 py-3 text-sm font-bold focus:bg-yellow-100 outline-none transition-colors shadow-[4px_4px_0px_#000]" />
               </div>
 
               <div className="pt-6 flex gap-4 justify-end mt-4 border-t-4 border-dashed border-black">
