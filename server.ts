@@ -140,19 +140,14 @@ app.post("/api/webhook", async (req, res) => {
   if (!events || !Array.isArray(events)) return;
 
   const data = await loadData();
-  let defaultToken = "";
-  let targetUserId = "";
-  let targetUserData: any = null;
+  const uniqueTokens = new Set<string>();
   for (const uid in data.users) {
     if (data.users[uid].lineToken) {
-      defaultToken = data.users[uid].lineToken;
-      targetUserId = uid;
-      targetUserData = data.users[uid];
-      break;
+      uniqueTokens.add(data.users[uid].lineToken);
     }
   }
 
-  if (!defaultToken || !targetUserData) return;
+  if (uniqueTokens.size === 0) return;
 
   for (const event of events) {
     if (event.type === "message" || event.type === "join") {
@@ -195,26 +190,33 @@ app.post("/api/webhook", async (req, res) => {
             replyText = `✅ 成功解除標籤：【${tag}】`;
           }
         } else if (text === "!標籤") {
-          const tags = targetUserData.subscribers?.[id] || [];
+          // Find the first user that has this subscriber to read tags
+          let tags: string[] = [];
+          for (const uid in data.users) {
+            if (data.users[uid].subscribers?.[id]) {
+              tags = data.users[uid].subscribers[id];
+              break;
+            }
+          }
           replyText = tags.length > 0 ? `目前此接收者綁定的標籤有：\n${tags.join("、")}` : "目前沒有綁定任何標籤。";
         }
       }
 
       if (replyText) {
-        try {
-          await fetch("https://api.line.me/v2/bot/message/reply", {
+        // Since we don't know which bot this webhook belongs to, 
+        // we try replying with all available tokens. Only the correct one will succeed.
+        for (const token of uniqueTokens) {
+          fetch("https://api.line.me/v2/bot/message/reply", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${defaultToken}`
+              "Authorization": `Bearer ${token}`
             },
             body: JSON.stringify({
               replyToken: event.replyToken,
               messages: [{ type: "text", text: replyText }]
             })
-          });
-        } catch (e) {
-          console.error("Webhook reply failed:", e);
+          }).catch(() => {});
         }
       }
     }
