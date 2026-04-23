@@ -156,15 +156,19 @@ export default function App() {
     }
 
     try {
+      const parsedTags = typeof formData.tags === 'string' 
+        ? formData.tags.split(',').map(t => t.trim()).filter(t => t) 
+        : [];
+
       if (editingMeetingId) {
         setMeetings(prev => prev.map(m => m.id === editingMeetingId ? {
           ...m,
           ...formData,
+          tags: parsedTags,
           updatedAt: new Date().toISOString()
         } : m));
       } else {
         const id = Date.now().toString();
-        const parsedTags = formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(t => t) : [];
         setMeetings(prev => [...prev, {
           ...formData,
           tags: parsedTags,
@@ -233,7 +237,7 @@ export default function App() {
       outline: m.outline,
       preparation: m.preparation,
       remindMinutes: m.remindMinutes || 10,
-      tags: m.tags ? m.tags.join(', ') : ''
+      tags: Array.isArray(m.tags) ? m.tags.join(', ') : (m.tags || '')
     });
     setEditingMeetingId(null);
     setShowMeetingModal(true);
@@ -247,7 +251,7 @@ export default function App() {
       outline: m.outline,
       preparation: m.preparation,
       remindMinutes: m.remindMinutes || 10,
-      tags: m.tags ? m.tags.join(', ') : ''
+      tags: Array.isArray(m.tags) ? m.tags.join(', ') : (m.tags || '')
     });
     setEditingMeetingId(m.id);
     setShowMeetingModal(true);
@@ -402,7 +406,7 @@ export default function App() {
                               <span className="bg-black text-white px-2 py-1 inline-block uppercase tracking-widest text-[18px] leading-[18px] flex-shrink-0">與會單位/人員</span>
                               <p className="text-[18px] leading-[28px] font-black text-black truncate uppercase -mt-[2px]">{m.units}</p>
                             </div>
-                            {m.tags && m.tags.length > 0 && (
+                            {Array.isArray(m.tags) && m.tags.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1 mb-1">
                                 {m.tags.map((tag: string, i: number) => (
                                   <span key={i} className="bg-[#FFD700] text-black border-2 border-black px-2 py-0.5 text-xs font-black uppercase shadow-[1px_1px_0px_#000]">
