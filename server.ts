@@ -169,19 +169,29 @@ app.post("/api/webhook", async (req, res) => {
         } else if (text.startsWith("!綁定 ")) {
           const tag = text.replace("!綁定 ", "").trim();
           if (tag) {
-            if (!targetUserData.subscribers) targetUserData.subscribers = {};
-            if (!targetUserData.subscribers[id]) targetUserData.subscribers[id] = [];
-            if (!targetUserData.subscribers[id].includes(tag)) {
-              targetUserData.subscribers[id].push(tag);
-              await supabase.from('app_data').upsert({ user_id: targetUserId, data: targetUserData });
+            for (const uid in data.users) {
+              const uData = data.users[uid];
+              if (uData.lineToken) {
+                if (!uData.subscribers) uData.subscribers = {};
+                if (!uData.subscribers[id]) uData.subscribers[id] = [];
+                if (!uData.subscribers[id].includes(tag)) {
+                  uData.subscribers[id].push(tag);
+                  await supabase.from('app_data').upsert({ user_id: uid, data: uData });
+                }
+              }
             }
             replyText = `✅ 成功綁定標籤：【${tag}】\n未來指定發送給【${tag}】的會議都會通知到這裡！`;
           }
         } else if (text.startsWith("!解除 ")) {
           const tag = text.replace("!解除 ", "").trim();
-          if (tag && targetUserData.subscribers && targetUserData.subscribers[id]) {
-            targetUserData.subscribers[id] = targetUserData.subscribers[id].filter((t: string) => t !== tag);
-            await supabase.from('app_data').upsert({ user_id: targetUserId, data: targetUserData });
+          if (tag) {
+            for (const uid in data.users) {
+              const uData = data.users[uid];
+              if (uData.lineToken && uData.subscribers && uData.subscribers[id]) {
+                uData.subscribers[id] = uData.subscribers[id].filter((t: string) => t !== tag);
+                await supabase.from('app_data').upsert({ user_id: uid, data: uData });
+              }
+            }
             replyText = `✅ 成功解除標籤：【${tag}】`;
           }
         } else if (text === "!標籤") {
