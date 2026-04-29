@@ -124,6 +124,11 @@ async function sendLineMessage(token: string, to: string, text: string) {
   }
 }
 
+// API to keep the server awake
+app.get("/api/ping", (req, res) => {
+  res.status(200).send("pong");
+});
+
 // API to trigger tests manually
 app.post("/api/test-line", async (req, res) => {
   const { lineToken, lineUserId } = req.body;
